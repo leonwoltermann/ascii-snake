@@ -1,9 +1,11 @@
 from shutil import get_terminal_size
 from random import randint
-from os import system
+import os
 from time import sleep
 from pynput import keyboard
 
+# to do:
+# lock input when running: https://stackoverflow.com/questions/67083097/how-to-prevent-user-input-into-console-when-program-is-running-in-python
 
 class Snake:
     def __init__(self):
@@ -15,8 +17,11 @@ class Snake:
         self.gameover = False
         self.column_speed = 0.09
         self.line_speed = 0.05
+        self.column_speed_increase = 0.009 #make this variable smaller to decrease difficulty
+        self.line_speed_increase = 0.005 #and this too
         self.food = self.spawn_food()
         self.score = 0
+        self.obstacles = self.spawn_obstacle()
 
     def create_grid(self):
         return [[0 for _ in range(self.columns)] for _ in range(self.lines-1)]
@@ -36,6 +41,9 @@ class Snake:
 
         for i, e in enumerate(self.food):
             self.grid[e[0]][e[1]] = 3
+
+        for i, e in enumerate(self.obstacles):
+            self.grid[e[0]][e[1]] = 4
             
     def update_snake(self, direction):
         if direction == "UP":
@@ -54,6 +62,8 @@ class Snake:
             or self.snake_column == self.columns - 1
             ):
             self.gameover = True
+        elif (self.snake_line, self.snake_column) in self.obstacles:
+            self.gameover = True
         else:
             self.snake.insert(0, (self.snake_line, self.snake_column))
 
@@ -71,34 +81,47 @@ class Snake:
             self.food.pop(0)
 
             food = (randint(1, self.lines - 3), randint(1, self.columns - 2))
-            while food in self.snake:
+            while food in self.snake or food in self.obstacles:
                 food = (randint(1, self.lines - 3), randint(1, self.columns - 2))
             self.food.insert(0, food)
 
+            obstacle = (randint(1, self.lines - 3), randint(1, self.columns - 2))
+            while obstacle in self.snake or obstacle in self.food:
+                obstacle = (randint(1, self.lines - 3), randint(1, self.columns - 2))
+            self.obstacles.insert(0, obstacle)
+                
+
             if self.line_speed > 0.01:
-                self.column_speed -= 0.009
-                self.line_speed -= 0.005
+                self.column_speed -= self.column_speed_increase
+                self.line_speed -= self.line_speed_increase
+    
+    def spawn_obstacle(self):
+        obstacle = (randint(1, self.lines - 3), randint(1, self.columns - 2))
+        while obstacle in self.snake or obstacle in self.food:
+            obstacle = (randint(1, self.lines - 3), randint(1, self.columns - 2))
+
+        return [obstacle]
 
     def draw_board(self):
         board = ""
         for i in range(len(self.grid)):
             for j in range(len(self.grid[i])):
                 if i == 0 and j == 0:
-                    board += "┌" #"█" #"┌"
+                    board += "┌"
                 elif i == 0 and j == self.columns-1:
-                    board += "┐" #"█" #"┐"
+                    board += "┐"
                 elif i == self.lines-2 and j == 0:
-                    board += "└"# "█" #"└"
+                    board += "└"
                 elif i == self.lines-2 and j == ((self.columns-1)//2)-5:
                     board += f" SCORE: {self.score} "
                 elif i == self.lines-2 and j > ((self.columns-1)//2)-5 and j < ((self.columns-1)//2)+5:
                     pass
                 elif i == self.lines-2 and j == self.columns-1:
-                    board += "┘"#"█" #"┘"
+                    board += "┘"
                 elif i == 0 or i == self.lines - 2:
-                    board += "─"#"█" #"─"
+                    board += "─"
                 elif j == 0 or j == self.columns - 1:
-                    board += "│"# "█" #"│"
+                    board += "│"
                 elif self.grid[i][j] == 0:
                     board += " "
                 elif self.grid[i][j] == 1:
@@ -107,6 +130,8 @@ class Snake:
                     board += "o"#"▢"
                 elif self.grid[i][j] == 3:
                     board += "%"
+                elif self.grid[i][j] == 4:
+                    board += "X"
 
         return(board)
 
@@ -117,20 +142,21 @@ direction = "RIGHT"
 
 def on_press(key):
     global direction
-    if key == keyboard.Key.up:
+    if key == keyboard.Key.up and direction != "DOWN":
         direction = 'UP'
-    elif key == keyboard.Key.down:
+    elif key == keyboard.Key.down and direction != "UP":
         direction = 'DOWN'
-    elif key == keyboard.Key.left:
+    elif key == keyboard.Key.left and direction != "RIGHT":
         direction = 'LEFT'
-    elif key == keyboard.Key.right:
+    elif key == keyboard.Key.right and direction != "LEFT":
         direction = 'RIGHT'
         
 listener = keyboard.Listener(on_press=on_press)
 listener.start()
 
+
 while not snake.gameover:
-    system("clear")
+    os.system('cls' if os.name == 'nt' else 'clear')
     snake.update_grid()
     print(snake.draw_board())
     snake.update_snake(direction)
