@@ -17,8 +17,8 @@ class Snake:
         self.gameover = False
         self.column_speed = 0.09
         self.line_speed = 0.05
-        self.column_speed_increase = 0.009 #make this variable smaller to decrease difficulty
-        self.line_speed_increase = 0.005 #and this too
+        self.column_speed_increase = 0.0009 #make this variable smaller to decrease difficulty
+        self.line_speed_increase = 0.0005 #and this too
         self.food = self.spawn_food()
         self.score = 0
         self.obstacles = self.spawn_obstacle()
@@ -114,6 +114,7 @@ class Snake:
                     board += "└"
                 elif i == self.lines-2 and j == ((self.columns-1)//2)-5:
                     board += f" SCORE: {self.score} "
+                #this lines needs to be adjusted, there is a need for one more space if the score is 10 or above
                 elif i == self.lines-2 and j > ((self.columns-1)//2)-5 and j < ((self.columns-1)//2)+5:
                     pass
                 elif i == self.lines-2 and j == self.columns-1:
@@ -134,6 +135,14 @@ class Snake:
                     board += "X"
 
         return(board)
+    
+    def play(self, direction):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        self.update_grid()
+        print(snake.draw_board())
+        self.update_snake(direction)
+        self.snake_eat()
+
 
 
 snake = Snake()
@@ -156,12 +165,8 @@ listener.start()
 
 
 while not snake.gameover:
-    os.system('cls' if os.name == 'nt' else 'clear')
-    snake.update_grid()
-    print(snake.draw_board())
-    snake.update_snake(direction)
-    snake.snake_eat()
-
+    snake.play(direction)
+    
     if direction == "UP" or direction == "DOWN":
         sleep(snake.column_speed)
     if direction == "LEFT" or direction == "RIGHT":
